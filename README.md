@@ -1,3 +1,26 @@
+#Monokle-helloworld
+A simple nginx application to welcome you to Monokle.
+
+## Steps on how to build your image and get started with kubernetes
+
+### Prerequisite : 
+
+- Install docker using this [link](https://docs.docker.com/engine/install/)
+
+### Steps :
+
+My personal favorite distro is Ubuntu and i prefer repository installation to
+keep things fresh. So i have used [this](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository) method.
+Once docker is up and running, run following commands.
+
+- Clone this repository.
+- cd ./hello-world-monokle
+- docker login -u "dockerhub-username"
+- docker build -t "image-name"
+
+Check the image from your dockerhub account.
+
+For further steps on how to get started with Kubernetes, head over to blogpost.
 # kustomize-helm-monokle
 A simple Nginx-Mariadb application with kustomize-helm. We
 have used Bitnami Helm Chart.
@@ -15,7 +38,7 @@ Tips for setup:
 
 Some CLI based help and commands:
 
-###Helm dry run
+### Helm dry run
 ```
 helm install --dry-run --debug mariadb
 ```
