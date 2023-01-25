@@ -1,4 +1,4 @@
-#Monokle-helloworld
+# Monokle-helloworld
 A simple nginx application to welcome you to Monokle.
 
 ## Steps on how to build your image and get started with kubernetes
@@ -21,6 +21,7 @@ Once docker is up and running, run following commands.
 Check the image from your dockerhub account.
 
 For further steps on how to get started with Kubernetes, head over to blogpost.
+
 # kustomize-helm-monokle
 A simple Nginx-Mariadb application with kustomize-helm. We
 have used Bitnami Helm Chart.
