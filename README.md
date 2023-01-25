@@ -14,13 +14,47 @@ keep things fresh. So i have used [this](https://docs.docker.com/engine/install/
 Once docker is up and running, run following commands.
 
 - Clone this repository.
-- cd ./hello-world-monokle
-- docker login -u "dockerhub-username"
-- docker build -t "image-name"
+
+```
+cd ./hello-world-monokle
+docker login -u "dockerhub-username"
+docker build -t "image-name"
+```
 
 Check the image from your dockerhub account.
 
 For further steps on how to get started with Kubernetes, head over to blogpost.
+
+### How output looks:
+
+```
+kustomize-helm-monokle$ kubectl get services | grep helloworld
+helloworld   LoadBalancer   10.111.30.165    10.111.30.165   80:32078/TCP   2m22s
+```
+Tip: Make sure you have `minikube tunnel` running in background.
+
+### Verify using service IP 
+
+```
+kustomize-helm-monokle$ curl http://10.111.30.165
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<title>
+			Get started with Kubernetes
+		</title>
+	</head>
+
+	<body>
+		<center>
+			<h1>Hello World from Monokle!</h1>
+		</center>
+	</body>
+</html>
+```
+
+Hurray!!
 
 # kustomize-helm-monokle
 A simple Nginx-Mariadb application with kustomize-helm. We
