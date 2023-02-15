@@ -1,4 +1,11 @@
-# Monokle-helloworld
+This repository has two use-case covered:
+
+1. hello-world-monokle : A getting started application to welcome you to Monokle.
+2. nginx-mariadb : Advanced level application to help you leverage power of Monokle towards error-free deployments
+
+Let's dig deeper with each:
+
+# Use case 1 : Monokle-helloworld
 A simple nginx application to welcome you to Monokle.
 
 ## Steps on how to build your image and get started with kubernetes
@@ -18,14 +25,17 @@ Once docker is up and running, run following commands.
 ```
 cd ./hello-world-monokle
 docker login -u "dockerhub-username"
-docker build -t "image-name"
+docker build -t "image-name:tag" .
+docker push "image-name:tag"
 ```
 
 Check the image from your dockerhub account.
 
+For learning purpose, you can make use of this image available on dockerhub: cerebro31/monokle-helloworld:latest
+
 For further steps on how to get started with Kubernetes, head over to blogpost.
 
-### How output looks:
+### How output looks after deployment:
 
 ```
 kustomize-helm-monokle$ kubectl get services | grep helloworld
@@ -56,7 +66,7 @@ kustomize-helm-monokle$ curl http://10.111.30.165
 
 Hurray!!
 
-# kustomize-helm-monokle
+# Use case 2 : kustomize-helm-monokle
 A simple Nginx-Mariadb application with kustomize-helm. We
 have used Bitnami Helm Chart.
 
