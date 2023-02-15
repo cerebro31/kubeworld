@@ -31,9 +31,9 @@ docker push "image-name:tag"
 
 Check the image from your dockerhub account.
 
-For learning purpose, you can make use of this image available on dockerhub: cerebro31/monokle-helloworld:latest
+For learning purpose, you can make use of this image available on [dockerhub](https://hub.docker.com/repository/docker/cerebro31/monokle-helloworld/general): cerebro31/monokle-helloworld:latest
 
-For further steps on how to get started with Kubernetes, head over to blogpost.
+For further steps on how to get started with Kubernetes, head over to [blogpost](https://monokle.io/blog/get-started-validate-kubernetes-resources).
 
 ### How output looks after deployment:
 
