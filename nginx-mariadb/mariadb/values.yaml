@@ -126,7 +126,7 @@ auth:
   ##   replicator: /vault/secrets/mariadb-replicator
   ##
   customPasswordFiles: {}
-  database: new_db
+  database: monokle_db
 ## @param initdbScripts Dictionary of initdb scripts
 ## Specify dictionary of scripts to be run at first boot
 ## Example:
