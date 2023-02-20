@@ -5,7 +5,7 @@ metadata:
   labels:
     env: prod
 spec:
-  replicas: 6
+  replicas: 8
   template:
     spec:
       containers:
