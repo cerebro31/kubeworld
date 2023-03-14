@@ -4,7 +4,7 @@ metadata:
   labels:
     app: test
   name: test
-  namespace: t1
+  namespace: testkctl
 spec:
   replicas: 1
   selector:
@@ -26,7 +26,8 @@ spec:
               subPath: sshd_config
               mountPath: /etc/ssh/sshd_config
             - name: ssh-keys
-              mountPath: /root/.ssh
+              subPath: authorized_keys
+              mountPath: /root/.ssh/authorized_keys
       volumes:
         - name: ssh-volume
           configMap:
