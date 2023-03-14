@@ -4,13 +4,14 @@ metadata:
   labels:
     app: test
   name: test
-  namespace: default
+  namespace: t1
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: test
   template:
+
     metadata:
       labels:
         app: test
@@ -24,10 +25,17 @@ spec:
             - name: ssh-volume
               subPath: sshd_config
               mountPath: /etc/ssh/sshd_config
-            - name: ssh-volume
-              subPath: authorized_keys
-              mountPath: /root/.ssh/authorized_keys
+            - name: ssh-keys
+              mountPath: /root/.ssh
       volumes:
         - name: ssh-volume
           configMap:
             name: ssh-config
+        - name: ssh-keys
+          secret:
+            secretName: ssh-secret
+            defaultMode: 0644
+            items:
+              - key: ssh-public-key
+                path: authorized_keys
+                mode: 0600
