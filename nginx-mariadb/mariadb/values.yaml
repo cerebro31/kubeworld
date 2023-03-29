@@ -10,6 +10,11 @@
 ##
 global:
   imageRegistry: ""
+  ## E.g.
+  ## imagePullSecrets:
+  ##   - myRegistryKeySecretName
+  ##
+  imagePullSecrets: []
   storageClass: ""
 
 ## @section Common parameters
@@ -41,6 +46,9 @@ schedulerName: ""
 ## ref: https://kubernetes.io/docs/concepts/containers/runtime-class/
 ##
 runtimeClassName: ""
+## @param extraDeploy Array of extra objects to deploy with the release (evaluated as a template)
+##
+extraDeploy: []
 
 ## Enable diagnostic mode in the deployment
 ##
@@ -56,6 +64,12 @@ diagnosticMode:
   ##
   args:
     - infinity
+
+## @param serviceBindings.enabled Create secret for service binding (Experimental)
+## Ref: https://servicebinding.io/service-provider/
+##
+serviceBindings:
+  enabled: false
 
 ## @section MariaDB common parameters
 ##
@@ -73,13 +87,20 @@ diagnosticMode:
 image:
   registry: docker.io
   repository: bitnami/mariadb
-  tag: 10.6.11-debian-11-r12
+  tag: 10.6.12-debian-11-r13
   digest: ""
   ## Specify a imagePullPolicy
   ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
   ## ref: https://kubernetes.io/docs/user-guide/images/#pre-pulling-images
   ##
   pullPolicy: IfNotPresent
+  ## Optionally specify an array of imagePullSecrets (secrets must be manually created in the namespace)
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  ## Example:
+  ## pullSecrets:
+  ##   - myRegistryKeySecretName
+  ##
+  pullSecrets: []
   ## Set to true if you would like to see extra information on logs
   ## It turns BASH and/or NAMI debugging in the image
   ##
@@ -94,6 +115,10 @@ auth:
   ## ref: https://github.com/bitnami/containers/tree/main/bitnami/mariadb#setting-the-root-password-on-first-run
   ##
   rootPassword: ""
+  ## @param auth.database Name for a custom database to create
+  ## ref: https://github.com/bitnami/containers/blob/main/bitnami/mariadb/README.md#creating-a-database-on-first-run
+  ##
+  database: my_database
   ## @param auth.username Name for a custom user to create
   ## ref: https://github.com/bitnami/containers/blob/main/bitnami/mariadb/README.md#creating-a-database-user-on-first-run
   ##
@@ -126,7 +151,6 @@ auth:
   ##   replicator: /vault/secrets/mariadb-replicator
   ##
   customPasswordFiles: {}
-  database: monokle_db
 ## @param initdbScripts Dictionary of initdb scripts
 ## Specify dictionary of scripts to be run at first boot
 ## Example:
@@ -149,9 +173,19 @@ primary:
   ## @param primary.name Name of the primary database (eg primary, master, leader, ...)
   ##
   name: primary
+  ## @param primary.command Override default container command on MariaDB Primary container(s) (useful when using custom images)
+  ##
+  command: []
+  ## @param primary.args Override default container args on MariaDB Primary container(s) (useful when using custom images)
+  ##
+  args: []
   ## @param primary.lifecycleHooks for the MariaDB Primary container(s) to automate configuration before or after startup
   ##
   lifecycleHooks: {}
+  ## @param primary.hostAliases Add deployment host aliases
+  ## https://kubernetes.io/docs/concepts/services-networking/add-entries-to-pod-etc-hosts-with-host-aliases/
+  ##
+  hostAliases: []
   ## @param primary.configuration [string] MariaDB Primary configuration to be injected as ConfigMap
   ## ref: https://mysql.com/kb/en/mysql/configuring-mysql-with-mycnf/#example-of-configuration-file
   ##
@@ -228,6 +262,13 @@ primary:
     ## key: "kubernetes.io/e2e-az-name"
     ##
     key: ""
+    ## @param primary.nodeAffinityPreset.values MariaDB primary node label values to match. Ignored if `primary.affinity` is set.
+    ## E.g.
+    ## values:
+    ##   - e2e-az1
+    ##   - e2e-az2
+    ##
+    values: []
   ## @param primary.affinity Affinity for MariaDB primary pods assignment
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
   ## Note: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
@@ -237,6 +278,10 @@ primary:
   ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
   ##
   nodeSelector: {}
+  ## @param primary.tolerations Tolerations for MariaDB primary pods assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
   ## @param primary.schedulerName Name of the k8s scheduler (other than default)
   ## ref: https://kubernetes.io/docs/tasks/administer-cluster/configure-multiple-schedulers/
   ##
@@ -245,6 +290,15 @@ primary:
   ## ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-management-policies
   ##
   podManagementPolicy: ""
+  ## @param primary.topologySpreadConstraints Topology Spread Constraints for MariaDB primary pods assignment
+  ## ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+  ## E.g.
+  ## topologySpreadConstraints:
+  ##   - maxSkew: 1
+  ##     topologyKey: topology.kubernetes.io/zone
+  ##     whenUnsatisfiable: DoNotSchedule
+  ##
+  topologySpreadConstraints: []
   ## @param primary.priorityClassName Priority class for MariaDB primary pods assignment
   ## Ref: https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
   ##
@@ -265,12 +319,16 @@ primary:
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
   ## @param primary.containerSecurityContext.enabled MariaDB primary container securityContext
   ## @param primary.containerSecurityContext.runAsUser User ID for the MariaDB primary container
-  ## @param primary.containerSecurityContext.runAsNonRoot Set Controller container's Security Context runAsNonRoot
+  ## @param primary.containerSecurityContext.runAsNonRoot Set primary container's Security Context runAsNonRoot
+  ## @param primary.containerSecurityContext.privileged Set primary container's Security Context privileged
+  ## @param primary.containerSecurityContext.allowPrivilegeEscalation Set primary container's Security Context allowPrivilegeEscalation
   ##
   containerSecurityContext:
     enabled: true
     runAsUser: 1001
     runAsNonRoot: true
+    privileged: false
+    allowPrivilegeEscalation: false
   ## MariaDB primary container's resource requests and limits
   ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
   ## We usually recommend not to specify default resources and to leave this as a conscious
@@ -365,6 +423,13 @@ primary:
   ## extraFlags: "--max-connect-errors=1000 --max_connections=155"
   ##
   extraFlags: ""
+  ## @param primary.extraEnvVars Extra environment variables to be set on MariaDB primary containers
+  ## E.g.
+  ## extraEnvVars:
+  ##  - name: TZ
+  ##    value: "Europe/Paris"
+  ##
+  extraEnvVars: []
   ## @param primary.extraEnvVarsCM Name of existing ConfigMap containing extra env vars for MariaDB primary containers
   ##
   extraEnvVarsCM: ""
@@ -393,6 +458,9 @@ primary:
     ##   GKE, AWS & OpenStack)
     ##
     storageClass: ""
+    ## @param primary.persistence.labels Labels for the PVC
+    ##
+    labels: {}
     ## @param primary.persistence.annotations MariaDB primary persistent volume claim annotations
     ##
     annotations: {}
@@ -409,6 +477,18 @@ primary:
     ##     app: my-app
     ##
     selector: {}
+  ## @param primary.extraVolumes Optionally specify extra list of additional volumes to the MariaDB Primary pod(s)
+  ##
+  extraVolumes: []
+  ## @param primary.extraVolumeMounts Optionally specify extra list of additional volumeMounts for the MariaDB Primary container(s)
+  ##
+  extraVolumeMounts: []
+  ## @param primary.initContainers Add additional init containers for the MariaDB Primary pod(s)
+  ##
+  initContainers: []
+  ## @param primary.sidecars Add additional sidecar containers for the MariaDB Primary pod(s)
+  ##
+  sidecars: []
   ## MariaDB Primary Service parameters
   ##
   service:
@@ -438,6 +518,16 @@ primary:
     ## ref https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
     ##
     externalTrafficPolicy: Cluster
+    ## @param primary.service.loadBalancerSourceRanges Address that are allowed when MariaDB Primary service is LoadBalancer
+    ## https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/#restrict-access-for-loadbalancer-service
+    ## E.g.
+    ## loadBalancerSourceRanges:
+    ##   - 10.10.10.0/24
+    ##
+    loadBalancerSourceRanges: []
+    ## @param primary.service.extraPorts Extra ports to expose (normally used with the `sidecar` value)
+    ##
+    extraPorts: []
     ## @param primary.service.annotations Provide any additional annotations which may be required
     ##
     annotations: {}
@@ -481,9 +571,19 @@ secondary:
   ## @param secondary.replicaCount Number of MariaDB secondary replicas
   ##
   replicaCount: 1
+  ## @param secondary.command Override default container command on MariaDB Secondary container(s) (useful when using custom images)
+  ##
+  command: []
+  ## @param secondary.args Override default container args on MariaDB Secondary container(s) (useful when using custom images)
+  ##
+  args: []
   ## @param secondary.lifecycleHooks for the MariaDB Secondary container(s) to automate configuration before or after startup
   ##
   lifecycleHooks: {}
+  ## @param secondary.hostAliases Add deployment host aliases
+  ## https://kubernetes.io/docs/concepts/services-networking/add-entries-to-pod-etc-hosts-with-host-aliases/
+  ##
+  hostAliases: []
   ## @param secondary.configuration [string] MariaDB Secondary configuration to be injected as ConfigMap
   ## ref: https://mysql.com/kb/en/mysql/configuring-mysql-with-mycnf/#example-of-configuration-file
   ##
@@ -558,6 +658,13 @@ secondary:
     ## key: "kubernetes.io/e2e-az-name"
     ##
     key: ""
+    ## @param secondary.nodeAffinityPreset.values MariaDB secondary node label values to match. Ignored if `secondary.affinity` is set.
+    ## E.g.
+    ## values:
+    ##   - e2e-az1
+    ##   - e2e-az2
+    ##
+    values: []
   ## @param secondary.affinity Affinity for MariaDB secondary pods assignment
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
   ## Note: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
@@ -567,6 +674,19 @@ secondary:
   ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
   ##
   nodeSelector: {}
+  ## @param secondary.tolerations Tolerations for MariaDB secondary pods assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  ## @param secondary.topologySpreadConstraints Topology Spread Constraints for MariaDB secondary pods assignment
+  ## ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
+  ## E.g.
+  ## topologySpreadConstraints:
+  ##   - maxSkew: 1
+  ##     topologyKey: topology.kubernetes.io/zone
+  ##     whenUnsatisfiable: DoNotSchedule
+  ##
+  topologySpreadConstraints: []
   ## @param secondary.priorityClassName Priority class for MariaDB secondary pods assignment
   ## Ref: https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
   ##
@@ -595,12 +715,16 @@ secondary:
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
   ## @param secondary.containerSecurityContext.enabled MariaDB secondary container securityContext
   ## @param secondary.containerSecurityContext.runAsUser User ID for the MariaDB secondary container
-  ## @param secondary.containerSecurityContext.runAsNonRoot Set Controller container's Security Context runAsNonRoot
+  ## @param secondary.containerSecurityContext.runAsNonRoot Set secondary container's Security Context runAsNonRoot
+  ## @param secondary.containerSecurityContext.privileged Set secondary container's Security Context privileged
+  ## @param secondary.containerSecurityContext.allowPrivilegeEscalation Set secondary container's Security Context allowPrivilegeEscalation
   ##
   containerSecurityContext:
     enabled: true
     runAsUser: 1001
     runAsNonRoot: true
+    privileged: false
+    allowPrivilegeEscalation: false
   ## MariaDB secondary container's resource requests and limits
   ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
   ## We usually recommend not to specify default resources and to leave this as a conscious
@@ -695,6 +819,13 @@ secondary:
   ## extraFlags: "--max-connect-errors=1000 --max_connections=155"
   ##
   extraFlags: ""
+  ## @param secondary.extraEnvVars Extra environment variables to be set on MariaDB secondary containers
+  ## E.g.
+  ## extraEnvVars:
+  ##  - name: TZ
+  ##    value: "Europe/Paris"
+  ##
+  extraEnvVars: []
   ## @param secondary.extraEnvVarsCM Name of existing ConfigMap containing extra env vars for MariaDB secondary containers
   ##
   extraEnvVarsCM: ""
@@ -719,6 +850,9 @@ secondary:
     ##   GKE, AWS & OpenStack)
     ##
     storageClass: ""
+    ## @param secondary.persistence.labels Labels for the PVC
+    ##
+    labels: {}
     ## @param secondary.persistence.annotations MariaDB secondary persistent volume claim annotations
     ##
     annotations: {}
@@ -735,6 +869,18 @@ secondary:
     ##     app: my-app
     ##
     selector: {}
+  ## @param secondary.extraVolumes Optionally specify extra list of additional volumes to the MariaDB secondary pod(s)
+  ##
+  extraVolumes: []
+  ## @param secondary.extraVolumeMounts Optionally specify extra list of additional volumeMounts for the MariaDB secondary container(s)
+  ##
+  extraVolumeMounts: []
+  ## @param secondary.initContainers Add additional init containers for the MariaDB secondary pod(s)
+  ##
+  initContainers: []
+  ## @param secondary.sidecars Add additional sidecar containers for the MariaDB secondary pod(s)
+  ##
+  sidecars: []
   ## MariaDB Secondary Service parameters
   ##
   service:
@@ -766,6 +912,16 @@ secondary:
     ## ref https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
     ##
     externalTrafficPolicy: Cluster
+    ## @param secondary.service.loadBalancerSourceRanges Address that are allowed when MariaDB secondary service is LoadBalancer
+    ## https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/#restrict-access-for-loadbalancer-service
+    ## E.g.
+    ## loadBalancerSourceRanges:
+    ##   - 10.10.10.0/24
+    ##
+    loadBalancerSourceRanges: []
+    ## @param secondary.service.extraPorts Extra ports to expose (normally used with the `sidecar` value)
+    ##
+    extraPorts: []
     ## @param secondary.service.annotations Provide any additional annotations which may be required
     ##
     annotations: {}
@@ -845,9 +1001,16 @@ volumePermissions:
   image:
     registry: docker.io
     repository: bitnami/bitnami-shell
-    tag: 11-debian-11-r61
+    tag: 11-debian-11-r98
     digest: ""
     pullPolicy: IfNotPresent
+    ## Optionally specify an array of imagePullSecrets (secrets must be manually created in the namespace)
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+    ## Example:
+    ## pullSecrets:
+    ##   - myRegistryKeySecretName
+    ##
+    pullSecrets: []
   ## @param volumePermissions.resources.limits Init container volume-permissions resource limits
   ## @param volumePermissions.resources.requests Init container volume-permissions resource requests
   ##
@@ -874,17 +1037,72 @@ metrics:
   image:
     registry: docker.io
     repository: bitnami/mysqld-exporter
-    tag: 0.14.0-debian-11-r67
+    tag: 0.14.0-debian-11-r99
     digest: ""
     pullPolicy: IfNotPresent
+    ## Optionally specify an array of imagePullSecrets (secrets must be manually created in the namespace)
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+    ## Example:
+    ## pullSecrets:
+    ##   - myRegistryKeySecretName
+    ##
+    pullSecrets: []
   ## @param metrics.annotations [object] Annotations for the Exporter pod
   ##
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "9104"
+  ## @param metrics.extraArgs [object] Extra args to be passed to mysqld_exporter
+  ## ref: https://github.com/prometheus/mysqld_exporter/
+  ## E.g.
+  ## - --collect.auto_increment.columns
+  ## - --collect.binlog_size
+  ## - --collect.engine_innodb_status
+  ## - --collect.engine_tokudb_status
+  ## - --collect.global_status
+  ## - --collect.global_variables
+  ## - --collect.info_schema.clientstats
+  ## - --collect.info_schema.innodb_metrics
+  ## - --collect.info_schema.innodb_tablespaces
+  ## - --collect.info_schema.innodb_cmp
+  ## - --collect.info_schema.innodb_cmpmem
+  ## - --collect.info_schema.processlist
+  ## - --collect.info_schema.processlist.min_time
+  ## - --collect.info_schema.query_response_time
+  ## - --collect.info_schema.tables
+  ## - --collect.info_schema.tables.databases
+  ## - --collect.info_schema.tablestats
+  ## - --collect.info_schema.userstats
+  ## - --collect.perf_schema.eventsstatements
+  ## - --collect.perf_schema.eventsstatements.digest_text_limit
+  ## - --collect.perf_schema.eventsstatements.limit
+  ## - --collect.perf_schema.eventsstatements.timelimit
+  ## - --collect.perf_schema.eventswaits
+  ## - --collect.perf_schema.file_events
+  ## - --collect.perf_schema.file_instances
+  ## - --collect.perf_schema.indexiowaits
+  ## - --collect.perf_schema.tableiowaits
+  ## - --collect.perf_schema.tablelocks
+  ## - --collect.perf_schema.replication_group_member_stats
+  ## - --collect.slave_status
+  ## - --collect.slave_hosts
+  ## - --collect.heartbeat
+  ## - --collect.heartbeat.database
+  ## - --collect.heartbeat.table
+  ##
+  extraArgs:
+    primary: []
+    secondary: []
+  ## @param metrics.extraVolumeMounts [object] Optionally specify extra list of additional volumeMounts for the MariaDB metrics container(s)
+  ##
+  extraVolumeMounts:
+    primary: []
+    secondary: []
   ## MariaDB metrics container Security Context
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
   ## @param metrics.containerSecurityContext.enabled Enable security context for MariaDB metrics container
+  ## @param metrics.containerSecurityContext.privileged Set metrics container's Security Context privileged
+  ## @param metrics.containerSecurityContext.allowPrivilegeEscalation Set metrics container's Security Context allowPrivilegeEscalation
   ## Example:
   ##   containerSecurityContext:
   ##     enabled: true
@@ -894,6 +1112,8 @@ metrics:
   ##
   containerSecurityContext:
     enabled: false
+    privileged: false
+    allowPrivilegeEscalation: false
   ## Mysqld Prometheus exporter resource requests and limits
   ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
   ## We usually recommend not to specify default resources and to leave this as a conscious
@@ -969,6 +1189,14 @@ metrics:
     ## scrapeTimeout: 30s
     ##
     scrapeTimeout: ""
+    ## @param metrics.serviceMonitor.relabelings RelabelConfigs to apply to samples before scraping
+    ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#relabelconfig
+    ##
+    relabelings: []
+    ## @param metrics.serviceMonitor.metricRelabelings MetricRelabelConfigs to apply to samples before ingestion
+    ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#relabelconfig
+    ##
+    metricRelabelings: []
     ## @param metrics.serviceMonitor.honorLabels honorLabels chooses the metric's labels on collisions with target labels
     ##
     honorLabels: false
@@ -994,6 +1222,18 @@ metrics:
     ## @param metrics.prometheusRule.additionalLabels Additional labels that can be used so PrometheusRule will be discovered by Prometheus
     ##
     additionalLabels: {}
+    ## @param metrics.prometheusRule.rules Prometheus Rule definitions
+    ##  - alert: MariaDB-Down
+    ##    expr: absent(up{job="mariadb"} == 1)
+    ##    for: 5m
+    ##    labels:
+    ##      severity: warning
+    ##      service: mariadb
+    ##    annotations:
+    ##      message: 'MariaDB instance {{ `{{` }} $labels.instance {{ `}}` }} is down'
+    ##      summary: MariaDB instance is down
+    ##
+    rules: []
 
 ## @section NetworkPolicy parameters
 ##
@@ -1023,11 +1263,11 @@ networkPolicy:
   ## @param networkPolicy.ingressRules.primaryAccessOnlyFrom.enabled Enable ingress rule that makes primary mariadb nodes only accessible from a particular origin.
   ## @param networkPolicy.ingressRules.primaryAccessOnlyFrom.namespaceSelector [object] Namespace selector label that is allowed to access the primary node. This label will be used to identified the allowed namespace(s).
   ## @param networkPolicy.ingressRules.primaryAccessOnlyFrom.podSelector [object] Pods selector label that is allowed to access the primary node. This label will be used to identified the allowed pod(s).
-  ## @param networkPolicy.ingressRules.primaryAccessOnlyFrom.customRules [object] Custom network policy for the primary node.
+  ## @param networkPolicy.ingressRules.primaryAccessOnlyFrom.customRules Custom network policy for the primary node.
   ## @param networkPolicy.ingressRules.secondaryAccessOnlyFrom.enabled Enable ingress rule that makes primary mariadb nodes only accessible from a particular origin.
   ## @param networkPolicy.ingressRules.secondaryAccessOnlyFrom.namespaceSelector [object] Namespace selector label that is allowed to acces the secondary nodes. This label will be used to identified the allowed namespace(s).
   ## @param networkPolicy.ingressRules.secondaryAccessOnlyFrom.podSelector [object] Pods selector label that is allowed to access the secondary nodes. This label will be used to identified the allowed pod(s).
-  ## @param networkPolicy.ingressRules.secondaryAccessOnlyFrom.customRules [object] Custom network policy for the secondary nodes.
+  ## @param networkPolicy.ingressRules.secondaryAccessOnlyFrom.customRules Custom network policy for the secondary nodes.
   ##
   ingressRules:
     ## Allow access to the primary node only from the indicated:
@@ -1052,7 +1292,7 @@ networkPolicy:
       ##           matchLabels:
       ##             label: example
       ##
-      customRules: {}
+      customRules: []
 
     ## Allow access to the secondary node only from the indicated:
     ##
@@ -1076,10 +1316,10 @@ networkPolicy:
       ##           matchLabels:
       ##             label: example
       ##
-      customRules: {}
+      customRules: []
 
   ## @param networkPolicy.egressRules.denyConnectionsToExternal Enable egress rule that denies outgoing traffic outside the cluster, except for DNS (port 53).
-  ## @param networkPolicy.egressRules.customRules [object] Custom network policy rule
+  ## @param networkPolicy.egressRules.customRules Custom network policy rule
   ##
   egressRules:
     # Deny connections to external. This is not compatible with an external database.
@@ -1092,4 +1332,4 @@ networkPolicy:
     ##           matchLabels:
     ##             label: example
     ##
-    customRules: {}
+    customRules: []
