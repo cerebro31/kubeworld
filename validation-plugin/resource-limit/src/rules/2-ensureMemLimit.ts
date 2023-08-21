@@ -13,14 +13,9 @@ export const ensureMemLimit = defineRule({
       if (containers) {
         for (const container of containers) {
           const resources = container.resources;
-          if (resources && resources.limits && resources.limits.memory) {
             if( resources?.limits?.memory !== '1G' ){
               report(deployment, { path: "spec.template.spec.containers" });
            }
-          }
-          else {
-            report(deployment, { path: "spec.template.spec.containers" });
-          }
         }
       }
     });
