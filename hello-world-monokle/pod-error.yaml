@@ -9,7 +9,21 @@ spec:
   containers:
     - name: helloworld
       image: monokle-helloworld:1.5
-      command: ["sh", "-c", "echo I am running as user $(id -u)"]
+      command:
+        - sh
+        - -c
+        - echo I am running as user $(id -u)
       securityContext:
         capabilities:
-          add: [SYS_ADMIN]
+          add: []
+          drop:
+            - ALL
+        runAsNonRoot: true
+        allowPrivilegeEscalation: false
+        runAsGroup: 10001
+        readOnlyRootFilesystem: true
+        runAsUser: 10001
+  automountServiceAccountToken: false
+  securityContext:
+    seccompProfile:
+      type: RuntimeDefault
